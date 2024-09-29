@@ -16,7 +16,8 @@ public class AccountController(DataContext context, ITokenService tokenService) 
     public async Task<ActionResult<UserDTO>> Register(RegisterDTO registerDTO)
     {
         if (await UserExist(registerDTO.Username)) return BadRequest("username is taken");
-        using var hmac = new HMACSHA512();
+        return Ok();
+        /* using var hmac = new HMACSHA512();
         var user = new AppUser
         {
             UserNmae = registerDTO.Username.ToLower(),
@@ -29,12 +30,12 @@ public class AccountController(DataContext context, ITokenService tokenService) 
         {
             Username = user.UserNmae,
             Token = tokenService.CreateToken(user)
-        };
+        }; */
     }
     [HttpPost("login")]
     public async Task<ActionResult<UserDTO>> login(LoginDTO loginDTO)
     {
-        var user = await context.Users.FirstOrDefaultAsync(x => x.UserNmae == loginDTO.Username.ToLower());
+        var user = await context.Users.FirstOrDefaultAsync(x => x.UserName == loginDTO.Username.ToLower());
         if(user == null) return Unauthorized("invaild username");
         using var hmac = new HMACSHA512(user.PasswordSalt);
         var ComputedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDTO.Password));
@@ -44,12 +45,12 @@ public class AccountController(DataContext context, ITokenService tokenService) 
         }
         return new UserDTO
         {
-            Username = user.UserNmae,
+            Username = user.UserName,
             Token = tokenService.CreateToken(user)
         };
     }
     private async Task<bool> UserExist(string username)
     {
-        return await context.Users.AnyAsync(x => x.UserNmae.ToLower() == username.ToLower());
+        return await context.Users.AnyAsync(x => x.UserName.ToLower() == username.ToLower());
     }
 }
